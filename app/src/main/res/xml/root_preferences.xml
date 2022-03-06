@@ -1,0 +1,13 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+        <SwitchPreferenceCompat
+            app:key="server_enable"
+            app:title="@string/server_enable"
+            app:defaultValue="true" />
+
+        <EditTextPreference
+            app:dependency="server_enable"
+            app:key="listen_port"
+            app:title="@string/listen_port"
+            app:useSimpleSummaryProvider="true"
+            app:defaultValue="3827" />
+</PreferenceScreen>

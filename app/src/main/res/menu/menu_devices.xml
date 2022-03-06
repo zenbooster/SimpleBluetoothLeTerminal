@@ -13,4 +13,7 @@
     <item
         android:id="@+id/bt_settings"
         android:title="Bluetooth settings" />
+    <item
+        android:id="@+id/tcpip_settings"
+        android:title="TCP/IP settings" />
 </menu>
