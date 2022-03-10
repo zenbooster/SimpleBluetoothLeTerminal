@@ -26,6 +26,8 @@ class TcpServerService : Service() {
     }*/
     private var serverSocket: ServerSocket? = null
     private val working = AtomicBoolean(true)
+    private val ThreadsHashSet: java.util.HashSet<Thread> = hashSetOf()
+
     private val runnable = Runnable {
         var socket: Socket? = null
         try {
@@ -38,7 +40,8 @@ class TcpServerService : Service() {
                     val dataOutputStream = DataOutputStream(socket.getOutputStream())
 
                     // Use threads for each client to communicate with them simultaneously
-                    val t: Thread = TcpClientHandler(dataInputStream, dataOutputStream)
+                    val t: Thread = TcpClientHandler(ThreadsHashSet, dataInputStream, dataOutputStream)
+                    ThreadsHashSet.add(t)
                     t.start()
                 } else {
                     Log.e(TAG, "Couldn't create ServerSocket!")

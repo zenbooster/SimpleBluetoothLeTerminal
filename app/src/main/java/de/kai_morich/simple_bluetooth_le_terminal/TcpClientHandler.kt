@@ -8,8 +8,22 @@ import java.io.IOException
 import android.os.Build
 import android.os.Vibrator
 import android.os.VibrationEffect
+import java.lang.Exception
+import java.lang.ThreadDeath
 
-class TcpClientHandler(private val dataInputStream: DataInputStream, private val dataOutputStream: DataOutputStream) : Thread() {
+class TcpClientHandler(private val ThreadsHashSet: java.util.HashSet<Thread>, private val dataInputStream: DataInputStream, private val dataOutputStream: DataOutputStream) : Thread() {
+    private val ths: java.util.HashSet<Thread> = ThreadsHashSet
+
+    private fun done(e: Exception) {
+        e.printStackTrace()
+        try {
+            dataInputStream.close()
+            dataOutputStream.close()
+        } catch (ex: IOException) {
+            ex.printStackTrace()
+        }
+    }
+
     override fun run() {
         while (true) {
             try {
@@ -19,7 +33,8 @@ class TcpClientHandler(private val dataInputStream: DataInputStream, private val
                     //sleep(2000L)
 
                     var b = dataInputStream.readByte()
-                    var t = 'v'.toByte()
+                    //var t = 'v'.toByte()
+                    var t = 'v'.code.toByte()
                     if (b == t)
                     {
                         val vibrator = ctx.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
@@ -43,24 +58,37 @@ class TcpClientHandler(private val dataInputStream: DataInputStream, private val
                     }
                 }
             } catch (e: IOException) {
-                e.printStackTrace()
-                try {
-                    dataInputStream.close()
-                    dataOutputStream.close()
-                } catch (ex: IOException) {
-                    ex.printStackTrace()
-                }
+                done(e)
+                break
             } catch (e: InterruptedException) {
-                e.printStackTrace()
+                /*e.printStackTrace()
                 try {
                     dataInputStream.close()
                     dataOutputStream.close()
                 } catch (ex: IOException) {
                     ex.printStackTrace()
                 }
-            }
+                */
+                done(e)
+                break
+            }/* catch(e: ThreadDeath) {
+                /*try {
+                    dataInputStream.close()
+                    dataOutputStream.close()
+                } catch (ex: IOException) {
+                    ex.printStackTrace()
+                }*/
+                done(e)
+                break
+            }*/
         }
+        ths.remove(this)
     }
+
+    /*override fun destroy() {
+        ths.remove(this)
+        super.destroy()
+    }*/
 
     companion object {
         private val TAG = TcpClientHandler::class.java.simpleName
