@@ -34,6 +34,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     private String deviceAddress;
     private SerialService service;
+    private TcpServerService srv_service;
 
     private TextView receiveText;
     private TextView sendText;
@@ -61,6 +62,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if (connected != Connected.False)
             disconnect();
         getActivity().stopService(new Intent(getActivity(), SerialService.class));
+        getActivity().stopService(new Intent(getActivity(), TcpServerService.class));
         super.onDestroy();
     }
 
@@ -71,12 +73,17 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
             service.attach(this);
         else
             getActivity().startService(new Intent(getActivity(), SerialService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
+
+        getActivity().startService(new Intent(getActivity(), TcpServerService.class));
+
     }
 
     @Override
     public void onStop() {
         if(service != null && !getActivity().isChangingConfigurations())
             service.detach();
+
+        //getActivity().stopService(new Intent(getActivity(), TcpServerService.class));
         super.onStop();
     }
 

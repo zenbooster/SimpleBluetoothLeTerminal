@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity implements FragmentManager.O
             onBackStackChanged();
 
         instance = this;
+        TcpClientHandler.ctx = this;
     }
 
     @Override
