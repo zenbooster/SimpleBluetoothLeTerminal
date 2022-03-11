@@ -28,6 +28,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import java.io.IOException;
+
 public class TerminalFragment extends Fragment implements ServiceConnection, SerialListener {
 
     private enum Connected { False, Pending, True }
@@ -74,7 +76,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         else
             getActivity().startService(new Intent(getActivity(), SerialService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
 
-        getActivity().startService(new Intent(getActivity(), TcpServerService.class));
+        //getActivity().startService(new Intent(getActivity(), TcpServerService.class));
 
     }
 
@@ -91,7 +93,9 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     @Override
     public void onAttach(@NonNull Activity activity) {
         super.onAttach(activity);
-        getActivity().bindService(new Intent(getActivity(), SerialService.class), this, Context.BIND_AUTO_CREATE);
+        Activity act = getActivity();
+        act.bindService(new Intent(getActivity(), SerialService.class), this, Context.BIND_AUTO_CREATE);
+        act.bindService(new Intent(getActivity(), TcpServerService.class), this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -111,17 +115,32 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
-        service = ((SerialService.SerialBinder) binder).getService();
-        service.attach(this);
-        if(initialStart && isResumed()) {
-            initialStart = false;
-            getActivity().runOnUiThread(this::connect);
+        String csname = name.getClassName();
+        if(csname.equals(SerialService.class.getName())) {
+            service = ((SerialService.SerialBinder) binder).getService();
+            service.attach(this);
+            if (initialStart && isResumed()) {
+                initialStart = false;
+                getActivity().runOnUiThread(this::connect);
+            }
+        }
+        else
+        if(csname.equals(TcpServerService.class.getName())) {
+            srv_service = ((TcpServerService.TcpServerBinder) binder).getService();
+            //srv_service.attach(this);
         }
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        service = null;
+        String csname = name.getClassName();
+        if(csname.equals(SerialService.class.getName())) {
+            service = null;
+        }
+        else
+        if(csname.equals(TcpServerService.class.getName())) {
+            srv_service = null;
+        }
     }
 
     /*
@@ -195,10 +214,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         } catch (Exception e) {
             onSerialConnectError(e);
         }
+
+        getActivity().startService(new Intent(getActivity(), TcpServerService.class));
     }
 
     private void disconnect() {
         connected = Connected.False;
+        getActivity().stopService(new Intent(getActivity(), TcpServerService.class));
         service.disconnect();
     }
 
@@ -246,6 +268,11 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 pendingNewline = msg.charAt(msg.length() - 1) == '\r';
             }
             receiveText.append(TextUtil.toCaretString(msg, newline.length() != 0));
+            try {
+                srv_service.write(data);
+            } catch (IOException e){
+                //
+            }
         }
     }
 
