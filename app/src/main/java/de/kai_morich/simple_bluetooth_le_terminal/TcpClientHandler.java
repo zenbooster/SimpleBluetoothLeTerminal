@@ -8,6 +8,8 @@ import android.os.Build.VERSION;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.LinkedList;
+
 import kotlin.Metadata;
 import kotlin.jvm.JvmStatic;
 import kotlin.jvm.internal.DefaultConstructorMarker;
@@ -19,6 +21,7 @@ public class TcpClientHandler extends Thread {
     private DataInputStream dataInputStream;
     private DataOutputStream dataOutputStream;
     public static Context ctx;
+    public LinkedList<byte[]> writeQueue = new LinkedList<byte[]>();
 
     private void done(Exception e) {
         e.printStackTrace();
@@ -39,28 +42,25 @@ public class TcpClientHandler extends Thread {
     public void run() {
         try {
             while(true) {
-                if (dataInputStream.available() == 0) {
-                    continue;
-                }
+                if (dataInputStream.available() > 0) {
+                    if (this.dataInputStream.readByte() != 'v') {
+                        continue;
+                    }
 
-                if (this.dataInputStream.readByte() != 'v') {
-                    continue;
-                }
+                    Vibrator vibrator = (Vibrator) ctx.getSystemService(Context.VIBRATOR_SERVICE);
+                    boolean canVibrate = vibrator.hasVibrator();
+                    if (!canVibrate) {
+                        continue;
+                    }
 
-                Vibrator vibrator = (Vibrator)ctx.getSystemService(Context.VIBRATOR_SERVICE);
-                boolean canVibrate = vibrator.hasVibrator();
-                if (!canVibrate) {
-                    continue;
-                }
+                    long milliseconds = 250L;
 
-                long milliseconds = 250L;
-
-                if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE));
-                }
-                else {
-                    vibrator.vibrate(milliseconds);
-                }
+                    if (VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(VibrationEffect.createOneShot(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE));
+                    } else {
+                        vibrator.vibrate(milliseconds);
+                    }
+                } // if (dataInputStream.available() > 0)
             } // while(true)
         } catch (IOException ex) {
             this.done(ex);
