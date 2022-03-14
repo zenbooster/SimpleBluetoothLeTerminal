@@ -8,7 +8,9 @@ import android.os.Build.VERSION;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
+import android.util.Base64;
 
 import kotlin.Metadata;
 import kotlin.jvm.JvmStatic;
@@ -35,7 +37,7 @@ public class TcpClientHandler extends Thread {
     }
 
     public void write(byte[] ba) throws IOException {
-        //dataOutputStream.write(ba);
+        writeQueue.add(ba);
     }
 
     @Override
@@ -61,6 +63,13 @@ public class TcpClientHandler extends Thread {
                         vibrator.vibrate(milliseconds);
                     }
                 } // if (dataInputStream.available() > 0)
+
+                if(writeQueue.size() > 0)
+                {
+                    byte [] ba = writeQueue.remove();
+                    dataOutputStream.write(String.format("%02X", ba.length).getBytes());
+                    dataOutputStream.write(Base64.encode(ba, Base64.NO_WRAP));
+                }
             } // while(true)
         } catch (IOException ex) {
             this.done(ex);
