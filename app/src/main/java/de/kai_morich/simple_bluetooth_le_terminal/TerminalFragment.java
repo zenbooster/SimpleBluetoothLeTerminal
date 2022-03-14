@@ -71,13 +71,13 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     @Override
     public void onStart() {
         super.onStart();
-        if(service != null)
+        if(service != null) {
             service.attach(this);
+            if(srv_service != null) // проверить, как тут быть... скорее всего это условие можно выкинуть.
+                service.attach(srv_service);
+        }
         else
             getActivity().startService(new Intent(getActivity(), SerialService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
-
-        //getActivity().startService(new Intent(getActivity(), TcpServerService.class));
-
     }
 
     @Override
@@ -85,7 +85,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         if(service != null && !getActivity().isChangingConfigurations())
             service.detach();
 
-        //getActivity().stopService(new Intent(getActivity(), TcpServerService.class));
         super.onStop();
     }
 
@@ -127,7 +126,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         else
         if(csname.equals(TcpServerService.class.getName())) {
             srv_service = ((TcpServerService.TcpServerBinder) binder).getService();
-            //srv_service.attach(this);
+            service.attach(srv_service);
         }
     }
 
@@ -268,11 +267,11 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 pendingNewline = msg.charAt(msg.length() - 1) == '\r';
             }
             receiveText.append(TextUtil.toCaretString(msg, newline.length() != 0));
-            try {
+            /*try {
                 srv_service.write(data);
             } catch (IOException e){
                 //
-            }
+            }*/
         }
     }
 
@@ -307,5 +306,4 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         status("connection lost: " + e.getMessage());
         disconnect();
     }
-
 }

@@ -4,8 +4,10 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.os.Binder;
 import android.os.Build;
@@ -20,14 +22,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.prefs.Preferences;
+//import android.content.ServiceConnection;
 
-import kotlin.Metadata;
-import kotlin.jvm.internal.DefaultConstructorMarker;
-import kotlin.jvm.internal.Intrinsics;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-public class TcpServerService extends Service {
+public class TcpServerService extends Service implements /*ServiceConnection, */SerialListener {
     class TcpServerBinder extends Binder {
         TcpServerService getService() { return TcpServerService.this; }
     }
@@ -117,5 +114,34 @@ public class TcpServerService extends Service {
         } else {
             startForeground(1, new Notification());
         }
+    }
+
+    /*@Override
+    public void onServiceConnected(ComponentName name, IBinder binder) {
+
+    }*/
+
+    /*
+     * SerialListener
+     */
+    @Override
+    public void onSerialConnect() {
+    }
+
+    @Override
+    public void onSerialConnectError(Exception e) {
+    }
+
+    @Override
+    public void onSerialRead(byte[] data) {
+        try {
+            write(data);
+        } catch (IOException e){
+            //
+        }
+    }
+
+    @Override
+    public void onSerialIoError(Exception e) {
     }
 }
