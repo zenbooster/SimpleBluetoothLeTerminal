@@ -83,7 +83,8 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     @Override
     public void onStop() {
         if(service != null && !getActivity().isChangingConfigurations())
-            service.detach();
+            //service.detach();
+            service.detach(this);
 
         super.onStop();
     }
