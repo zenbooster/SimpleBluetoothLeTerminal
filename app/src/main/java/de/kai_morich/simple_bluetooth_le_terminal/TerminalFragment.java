@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -267,11 +268,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
                 pendingNewline = msg.charAt(msg.length() - 1) == '\r';
             }
             receiveText.append(TextUtil.toCaretString(msg, newline.length() != 0));
-            /*try {
-                srv_service.write(data);
-            } catch (IOException e){
-                //
-            }*/
         }
     }
 
@@ -305,5 +301,22 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     public void onSerialIoError(Exception e) {
         status("connection lost: " + e.getMessage());
         disconnect();
+
+        /*do {
+            try {
+                BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
+                status("connecting...");
+                connected = Connected.Pending;
+                SerialSocket socket = new SerialSocket(getActivity().getApplicationContext(), device);
+                service.connect(socket);
+            } catch (Exception ex) {
+                SystemClock.sleep(250);
+                continue;
+            }
+
+            getActivity().startService(new Intent(getActivity(), TcpServerService.class));
+        } while(false);
+        */
     }
 }
