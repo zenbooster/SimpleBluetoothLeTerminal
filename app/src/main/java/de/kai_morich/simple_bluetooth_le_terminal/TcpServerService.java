@@ -7,7 +7,8 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.graphics.Color;
 import android.os.Binder;
 import android.os.Build;
@@ -21,10 +22,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.prefs.Preferences;
-//import android.content.ServiceConnection;
+//import java.util.prefs.Preferences;
 
-public class TcpServerService extends Service implements /*ServiceConnection, */SerialListener {
+public class TcpServerService extends Service implements SerialListener {
     class TcpServerBinder extends Binder {
         TcpServerService getService() { return TcpServerService.this; }
     }
@@ -37,9 +37,14 @@ public class TcpServerService extends Service implements /*ServiceConnection, */
     private Runnable runnable = (Runnable)(new Runnable() {
         public void run() {
             Socket socket = (Socket)null;
+            SharedPreferences sharedPreferences =
+                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            String sPort = sharedPreferences.getString("listen_port", "3827");
+            int port = Integer.parseInt(sPort);
+            //int port = sharedPreferences.getInt("listen_port", 3827);
 
             try {
-                serverSocket = new ServerSocket(9876);
+                serverSocket = new ServerSocket(port);
 
                 while(working.get()) {
                     if (serverSocket != null) {

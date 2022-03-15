@@ -73,7 +73,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         super.onStart();
         if(service != null) {
             service.attach(this);
-            if(srv_service != null) // проверить, как тут быть... скорее всего это условие можно выкинуть.
+            //if(srv_service != null) // проверить, как тут быть... скорее всего это условие можно выкинуть.
                 service.attach(srv_service);
         }
         else
@@ -83,7 +83,6 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     @Override
     public void onStop() {
         if(service != null && !getActivity().isChangingConfigurations())
-            //service.detach();
             service.detach(this);
 
         super.onStop();
