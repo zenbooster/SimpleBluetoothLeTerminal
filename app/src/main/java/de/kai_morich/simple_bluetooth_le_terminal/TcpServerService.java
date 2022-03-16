@@ -41,7 +41,6 @@ public class TcpServerService extends Service implements SerialListener {
                     PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
             String sPort = sharedPreferences.getString("listen_port", "3827");
             int port = Integer.parseInt(sPort);
-            //int port = sharedPreferences.getInt("listen_port", 3827);
 
             try {
                 serverSocket = new ServerSocket(port);
@@ -120,11 +119,6 @@ public class TcpServerService extends Service implements SerialListener {
             startForeground(1, new Notification());
         }
     }
-
-    /*@Override
-    public void onServiceConnected(ComponentName name, IBinder binder) {
-
-    }*/
 
     /*
      * SerialListener

@@ -31,19 +31,15 @@ import androidx.fragment.app.Fragment;
 
 import java.io.IOException;
 
-public class TerminalFragment extends Fragment implements ServiceConnection, SerialListener {
-
-    private enum Connected { False, Pending, True }
+public class TerminalFragment extends Fragment implements ServiceConnection, GuardianListener {
 
     private String deviceAddress;
-    private SerialService service;
-    private TcpServerService srv_service;
+    private GuardianService service;
 
     private TextView receiveText;
     private TextView sendText;
     private TextUtil.HexWatcher hexWatcher;
 
-    private Connected connected = Connected.False;
     private boolean initialStart = true;
     private boolean hexEnabled = false;
     private boolean pendingNewline = false;
@@ -62,10 +58,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     @Override
     public void onDestroy() {
-        if (connected != Connected.False)
-            disconnect();
-        getActivity().stopService(new Intent(getActivity(), SerialService.class));
-        getActivity().stopService(new Intent(getActivity(), TcpServerService.class));
+        getActivity().stopService(new Intent(getActivity(), GuardianService.class));
         super.onDestroy();
     }
 
@@ -74,17 +67,16 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
         super.onStart();
         if(service != null) {
             service.attach(this);
-            //if(srv_service != null) // проверить, как тут быть... скорее всего это условие можно выкинуть.
-                service.attach(srv_service);
+            service.onStart();
         }
         else
-            getActivity().startService(new Intent(getActivity(), SerialService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
+            getActivity().startService(new Intent(getActivity(), GuardianService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
     }
 
     @Override
     public void onStop() {
         if(service != null && !getActivity().isChangingConfigurations())
-            service.detach(this);
+            service.detach();
 
         super.onStop();
     }
@@ -94,8 +86,7 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     public void onAttach(@NonNull Activity activity) {
         super.onAttach(activity);
         Activity act = getActivity();
-        act.bindService(new Intent(getActivity(), SerialService.class), this, Context.BIND_AUTO_CREATE);
-        act.bindService(new Intent(getActivity(), TcpServerService.class), this, Context.BIND_AUTO_CREATE);
+        act.bindService(new Intent(getActivity(), GuardianService.class), this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -115,32 +106,21 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
-        String csname = name.getClassName();
-        if(csname.equals(SerialService.class.getName())) {
-            service = ((SerialService.SerialBinder) binder).getService();
-            service.attach(this);
-            if (initialStart && isResumed()) {
-                initialStart = false;
-                getActivity().runOnUiThread(this::connect);
-            }
-        }
-        else
-        if(csname.equals(TcpServerService.class.getName())) {
-            srv_service = ((TcpServerService.TcpServerBinder) binder).getService();
-            service.attach(srv_service);
+        service = ((GuardianService.GuardianBinder) binder).getService();
+        service.setDeviceAddress(deviceAddress);
+        service.attach(this);
+        service.onAttach();
+
+        if (initialStart && isResumed()) {
+            initialStart = false;
+            getActivity().runOnUiThread(this::connect);
         }
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        String csname = name.getClassName();
-        if(csname.equals(SerialService.class.getName())) {
-            service = null;
-        }
-        else
-        if(csname.equals(TcpServerService.class.getName())) {
-            srv_service = null;
-        }
+        service.onDetach();
+        service = null;
     }
 
     /*
@@ -204,28 +184,15 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
      * Serial + UI
      */
     private void connect() {
-        try {
-            BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-            status("connecting...");
-            connected = Connected.Pending;
-            SerialSocket socket = new SerialSocket(getActivity().getApplicationContext(), device);
-            service.connect(socket);
-        } catch (Exception e) {
-            onSerialConnectError(e);
-        }
-
-        getActivity().startService(new Intent(getActivity(), TcpServerService.class));
+        service.connect();
     }
 
     private void disconnect() {
-        connected = Connected.False;
-        getActivity().stopService(new Intent(getActivity(), TcpServerService.class));
         service.disconnect();
     }
 
     private void send(String str) {
-        if(connected != Connected.True) {
+        if(!service.isConnected()) {
             Toast.makeText(getActivity(), "not connected", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -278,45 +245,15 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Ser
     }
 
     /*
-     * SerialListener
+     * GuardianListener
      */
     @Override
-    public void onSerialConnect() {
-        status("connected");
-        connected = Connected.True;
-    }
-
-    @Override
-    public void onSerialConnectError(Exception e) {
-        status("connection failed: " + e.getMessage());
-        disconnect();
+    public void onStatus(String str) {
+        status(str);
     }
 
     @Override
     public void onSerialRead(byte[] data) {
         receive(data);
-    }
-
-    @Override
-    public void onSerialIoError(Exception e) {
-        status("connection lost: " + e.getMessage());
-        disconnect();
-
-        /*do {
-            try {
-                BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-                status("connecting...");
-                connected = Connected.Pending;
-                SerialSocket socket = new SerialSocket(getActivity().getApplicationContext(), device);
-                service.connect(socket);
-            } catch (Exception ex) {
-                SystemClock.sleep(250);
-                continue;
-            }
-
-            getActivity().startService(new Intent(getActivity(), TcpServerService.class));
-        } while(false);
-        */
     }
 }

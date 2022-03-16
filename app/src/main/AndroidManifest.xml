@@ -21,9 +21,13 @@
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
         <service
-            android:name=".TcpServerService"
+            android:name=".GuardianService"
             android:enabled="true"
             android:exported="false"></service>
+        <service
+            android:name=".TcpServerService"
+            android:enabled="true"
+            android:exported="false" />
 
         <activity
             android:name=".TcpIpSettingsActivity"
