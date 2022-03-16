@@ -9,4 +9,5 @@ interface GuardianListener extends SerialListener {
     default void onSerialIoError (Exception e) {};
 
     void onStatus(String str);
+    void onConnect();
 }

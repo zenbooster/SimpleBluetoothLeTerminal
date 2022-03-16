@@ -109,12 +109,17 @@ public class TerminalFragment extends Fragment implements ServiceConnection, Gua
         service = ((GuardianService.GuardianBinder) binder).getService();
         service.setDeviceAddress(deviceAddress);
         service.attach(this);
-        service.onAttach();
+        //service.onAttach();
 
         if (initialStart && isResumed()) {
             initialStart = false;
-            getActivity().runOnUiThread(this::connect);
+            //getActivity().runOnUiThread(this::connect);
         }
+    }
+
+    @Override
+    public void onConnect() {
+        getActivity().runOnUiThread(this::connect);
     }
 
     @Override

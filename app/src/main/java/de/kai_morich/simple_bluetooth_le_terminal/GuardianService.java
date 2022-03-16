@@ -8,11 +8,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.content.ServiceConnection;
 import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.IOException;
 
@@ -39,6 +41,11 @@ public class GuardianService extends Service implements ServiceConnection, Seria
     }
 
     @Override
+    public void onCreate() {
+        bindService(new Intent(this, SerialService.class), this, Context.BIND_AUTO_CREATE);
+        bindService(new Intent(this, TcpServerService.class), this, Context.BIND_AUTO_CREATE);
+    }
+    @Override
     public void onDestroy() {
         if (connected != Connected.False)
             disconnect();
@@ -59,10 +66,10 @@ public class GuardianService extends Service implements ServiceConnection, Seria
 
     // called from fragment
     //@SuppressWarnings("deprecation") // onAttach(context) was added with API 23. onAttach(activity) works for all API versions
-    public void onAttach() {
+    /*public void onAttach() {
         bindService(new Intent(this, SerialService.class), this, Context.BIND_AUTO_CREATE);
         bindService(new Intent(this, TcpServerService.class), this, Context.BIND_AUTO_CREATE);
-    }
+    }*/
 
     // called from fragment
     public void onDetach() {
@@ -80,6 +87,7 @@ public class GuardianService extends Service implements ServiceConnection, Seria
         if(csname.equals(SerialService.class.getName())) {
             service = ((SerialService.SerialBinder) binder).getService();
             service.attach(this);
+            listener.onConnect();
         }
         else
         if(csname.equals(TcpServerService.class.getName())) {
