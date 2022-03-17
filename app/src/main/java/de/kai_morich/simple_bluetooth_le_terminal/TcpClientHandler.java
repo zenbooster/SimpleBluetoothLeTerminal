@@ -9,10 +9,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.LinkedList;
+import java.net.Socket;
 import android.util.Base64;
 
 public class TcpClientHandler extends Thread {
     private TcpClientPool tcpool;
+    private Socket socket;
     private DataInputStream dataInputStream;
     private DataOutputStream dataOutputStream;
     public static Context ctx;
@@ -31,6 +33,10 @@ public class TcpClientHandler extends Thread {
 
     public void write(byte[] ba) throws IOException {
         writeQueue.add(ba);
+    }
+
+    public void drop() throws IOException {
+        socket.close();
     }
 
     @Override
@@ -70,11 +76,12 @@ public class TcpClientHandler extends Thread {
         tcpool.remove(this);
     }
 
-    public TcpClientHandler(TcpClientPool tcpClientPool, DataInputStream dataInputStream, DataOutputStream dataOutputStream) {
+    public TcpClientHandler(TcpClientPool tcpClientPool, Socket socket) throws IOException {
         super();
-        this.tcpool = tcpClientPool;
-        this.dataInputStream = dataInputStream;
-        this.dataOutputStream = dataOutputStream;
+        tcpool = tcpClientPool;
+        this.socket = socket;
+        dataInputStream = new DataInputStream(socket.getInputStream());
+        dataOutputStream = new DataOutputStream(socket.getOutputStream());
     }
 
     public static Context getCtx() {

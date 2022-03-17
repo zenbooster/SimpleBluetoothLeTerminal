@@ -20,4 +20,14 @@ public class TcpClientPool {
             tch.write(ba);
         }
     }
+
+    public void drop() {
+        for (TcpClientHandler tch : this.ThreadsHashSet) {
+            try {
+                tch.drop();
+            } catch(IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

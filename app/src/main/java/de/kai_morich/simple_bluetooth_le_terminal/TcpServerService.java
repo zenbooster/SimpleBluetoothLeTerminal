@@ -16,13 +16,10 @@ import android.os.IBinder;
 import android.os.Build.VERSION;
 import android.util.Log;
 import androidx.core.app.NotificationCompat.Builder;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
-//import java.util.prefs.Preferences;
 
 public class TcpServerService extends Service implements SerialListener {
     class TcpServerBinder extends Binder {
@@ -49,9 +46,7 @@ public class TcpServerService extends Service implements SerialListener {
                     if (serverSocket != null) {
                         socket = serverSocket.accept();
                         //Log.i(TcpServerService.TAG, "New client: " + socket);
-                        DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-                        DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-                        TcpClientHandler t = new TcpClientHandler(tcpool, dataInputStream, dataOutputStream);
+                        TcpClientHandler t = new TcpClientHandler(tcpool, socket);
                         tcpool.add(t);
                         t.start();
                     } else {
@@ -129,6 +124,7 @@ public class TcpServerService extends Service implements SerialListener {
 
     @Override
     public void onSerialConnectError(Exception e) {
+        tcpool.drop();
     }
 
     @Override
@@ -136,11 +132,12 @@ public class TcpServerService extends Service implements SerialListener {
         try {
             write(data);
         } catch (IOException e){
-            //
+            e.printStackTrace();
         }
     }
 
     @Override
     public void onSerialIoError(Exception e) {
+        tcpool.drop();
     }
 }
