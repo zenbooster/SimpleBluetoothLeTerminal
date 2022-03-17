@@ -105,7 +105,7 @@ public class GuardianService extends Service implements ServiceConnection, Seria
         try {
             BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-            listener.onStatus("connecting...");
+            status("connecting...");
             connected = Connected.Pending;
             SerialSocket socket = new SerialSocket(getApplicationContext(), device);
             service.connect(socket);
@@ -120,6 +120,26 @@ public class GuardianService extends Service implements ServiceConnection, Seria
         connected = Connected.False;
         stopService(new Intent(GuardianService.this, TcpServerService.class));
         service.disconnect();
+    }
+
+    public void reconnect() {
+        do {
+            try {
+                BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
+
+                status("connecting...");
+
+                connected = Connected.Pending;
+                SerialSocket socket = new SerialSocket(getApplicationContext(), device);
+                service.connect(socket);
+            } catch (Exception ex) {
+                SystemClock.sleep(250);
+                continue;
+            }
+
+            startService(new Intent(GuardianService.this, TcpServerService.class));
+        } while(false);
     }
 
     public boolean isConnected() {
@@ -140,25 +160,34 @@ public class GuardianService extends Service implements ServiceConnection, Seria
 
         listener = null;
     }
+
+    private void status(String str) {
+        if(listener != null) {
+            listener.onStatus(str);
+        }
+    }
     /*
      * SerialListener
      */
     @Override
     public void onSerialConnect() {
+        status("connected");
         connected = Connected.True;
         if(listener != null) {
-            listener.onStatus("connected");
             listener.onSerialConnect();
         }
     }
 
     @Override
     public void onSerialConnectError(Exception e) {
+        status("connection failed: " + e.getMessage());
         disconnect();
+
         if(listener != null) {
             listener.onSerialConnectError(e);
-            listener.onStatus("connection failed: " + e.getMessage());
         }
+
+        reconnect();
     }
 
     @Override
@@ -169,31 +198,13 @@ public class GuardianService extends Service implements ServiceConnection, Seria
     }
     @Override
     public void onSerialIoError(Exception e) {
-        if(listener != null)
-            listener.onStatus("connection lost: " + e.getMessage());
+        status("connection lost: " + e.getMessage());
 
         disconnect();
 
-        do {
-            try {
-                BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-
-                if(listener != null)
-                    listener.onStatus("connecting...");
-
-                connected = Connected.Pending;
-                SerialSocket socket = new SerialSocket(getApplicationContext(), device);
-                service.connect(socket);
-            } catch (Exception ex) {
-                SystemClock.sleep(250);
-                continue;
-            }
-
-            startService(new Intent(GuardianService.this, TcpServerService.class));
-        } while(false);
-
         if(listener != null)
             listener.onSerialConnectError(e);
+
+        reconnect();
     }
 }
