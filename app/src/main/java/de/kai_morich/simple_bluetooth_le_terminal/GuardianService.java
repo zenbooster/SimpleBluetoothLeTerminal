@@ -65,13 +65,6 @@ public class GuardianService extends Service implements ServiceConnection, Seria
     }
 
     // called from fragment
-    //@SuppressWarnings("deprecation") // onAttach(context) was added with API 23. onAttach(activity) works for all API versions
-    /*public void onAttach() {
-        bindService(new Intent(this, SerialService.class), this, Context.BIND_AUTO_CREATE);
-        bindService(new Intent(this, TcpServerService.class), this, Context.BIND_AUTO_CREATE);
-    }*/
-
-    // called from fragment
     public void onDetach() {
         try { unbindService(this); } catch(Exception ignored) {}
     }
@@ -142,8 +135,8 @@ public class GuardianService extends Service implements ServiceConnection, Seria
     }
 
     public void detach() {
-        if(service != null)
-            service.detach(this);
+        //if(service != null)
+        //    service.detach(this);
 
         listener = null;
     }
@@ -152,32 +145,43 @@ public class GuardianService extends Service implements ServiceConnection, Seria
      */
     @Override
     public void onSerialConnect() {
-        listener.onStatus("connected");
         connected = Connected.True;
-        listener.onSerialConnect();
+        if(listener != null) {
+            listener.onStatus("connected");
+            listener.onSerialConnect();
+        }
     }
 
     @Override
     public void onSerialConnectError(Exception e) {
-        listener.onStatus("connection failed: " + e.getMessage());
         disconnect();
-        listener.onSerialConnectError(e);
+        if(listener != null) {
+            listener.onSerialConnectError(e);
+            listener.onStatus("connection failed: " + e.getMessage());
+        }
     }
 
     @Override
     public void onSerialRead(byte[] data) {
-        listener.onSerialRead(data);
+        if(listener != null) {
+            listener.onSerialRead(data);
+        }
     }
     @Override
     public void onSerialIoError(Exception e) {
-        listener.onStatus("connection lost: " + e.getMessage());
+        if(listener != null)
+            listener.onStatus("connection lost: " + e.getMessage());
+
         disconnect();
 
         do {
             try {
                 BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-                listener.onStatus("connecting...");
+
+                if(listener != null)
+                    listener.onStatus("connecting...");
+
                 connected = Connected.Pending;
                 SerialSocket socket = new SerialSocket(getApplicationContext(), device);
                 service.connect(socket);
@@ -189,6 +193,7 @@ public class GuardianService extends Service implements ServiceConnection, Seria
             startService(new Intent(GuardianService.this, TcpServerService.class));
         } while(false);
 
-        listener.onSerialConnectError(e);
+        if(listener != null)
+            listener.onSerialConnectError(e);
     }
 }
