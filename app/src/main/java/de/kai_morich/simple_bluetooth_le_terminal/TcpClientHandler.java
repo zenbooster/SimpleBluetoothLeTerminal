@@ -66,8 +66,6 @@ public class TcpClientHandler extends Thread {
                 if(writeQueue.size() > 0)
                 {
                     byte [] ba = writeQueue.remove();
-                    //dataOutputStream.write(String.format("%04X", ba.length).getBytes());
-                    //dataOutputStream.write(Base64.encode(ba, Base64.NO_WRAP));
                     ba = Base64.encode(ba, Base64.NO_WRAP);
                     dataOutputStream.write(String.format("%04X", ba.length).getBytes());
                     dataOutputStream.write(ba);
