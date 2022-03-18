@@ -4,7 +4,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -22,6 +21,8 @@ import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TcpServerService extends Service implements SerialListener {
+    private static final String TAG = "TcpServerService";
+
     class TcpServerBinder extends Binder {
         TcpServerService getService() { return TcpServerService.this; }
     }
@@ -45,32 +46,28 @@ public class TcpServerService extends Service implements SerialListener {
                 while(working.get()) {
                     if (serverSocket != null) {
                         socket = serverSocket.accept();
-                        //Log.i(TcpServerService.TAG, "New client: " + socket);
+                        Log.i(TAG, "New client: " + socket);
                         TcpClientHandler t = new TcpClientHandler(tcpool, socket);
                         tcpool.add(t);
                         t.start();
                     } else {
-                        //Log.e(TcpServerService.TAG, "Couldn't create ServerSocket!");
+                        Log.e(TAG, "Couldn't create ServerSocket!");
                     }
                 } // while(working.get())
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
 
                 try {
                     if (socket != null) {
                         socket.close();
                     }
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    Log.e(TAG, ex.getMessage(), ex);
                 }
             }
 
         }
     });
-    //private static final String TAG;
-    private static final int PORT = 9876;
-
-    //public static final TcpServerService.Companion Companion = new TcpServerService.Companion((DefaultConstructorMarker)null);
 
     public final void write(byte[] ba) throws IOException {
         tcpool.write(ba);
@@ -90,7 +87,7 @@ public class TcpServerService extends Service implements SerialListener {
         try {
             serverSocket.close();
         } catch(IOException e){
-            //
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
@@ -124,7 +121,6 @@ public class TcpServerService extends Service implements SerialListener {
 
     @Override
     public void onSerialConnectError(Exception e) {
-        tcpool.drop();
     }
 
     @Override
@@ -132,12 +128,11 @@ public class TcpServerService extends Service implements SerialListener {
         try {
             write(data);
         } catch (IOException e){
-            e.printStackTrace();
+            Log.e(TAG, e.getMessage(), e);
         }
     }
 
     @Override
     public void onSerialIoError(Exception e) {
-        tcpool.drop();
     }
 }

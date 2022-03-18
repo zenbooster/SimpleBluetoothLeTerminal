@@ -26,6 +26,7 @@ import java.util.Queue;
  * use listener chain: SerialSocket -> SerialService -> UI fragment
  */
 public class SerialService extends Service implements SerialListener {
+    private static final String TAG = "SerialService";
 
     class SerialBinder extends Binder {
         SerialService getService() { return SerialService.this; }
